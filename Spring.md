@@ -1,3 +1,42 @@
+# 通用配置文件
+
+1. 核心配置文件——**applicationContext.xml**
+
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <beans xmlns="http://www.springframework.org/schema/beans"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:context="http://www.springframework.org/schema/context"
+          xsi:schemaLocation="http://www.springframework.org/schema/beans
+          http://www.springframework.org/schema/beans/spring-beans.xsd
+          http://www.springframework.org/schema/context
+          http://www.springframework.org/schema/context/spring-context.xsd">
+   
+   <!--组件扫描-->
+       <context:component-scan base-package="com.CCooky">
+           <!--排除@Controller注解的扫描-->
+           <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+       </context:component-scan>
+   </beans>
+   ```
+
+2. 整合SpringMVC——**web.xml**
+
+   ```xml
+   <!--    spring监听器（这里整合了SpringMVC）-->
+       <context-param>
+           <param-name>contextConfigLocation</param-name>
+           <param-value>classpath:applicationContext.xml</param-value>
+       </context-param>
+       <listener>
+           <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+       </listener>
+   ```
+
+
+
+
+
 # Spring
 
 ## 1. 简介
@@ -1172,3 +1211,1127 @@ public class UserServlet extends HttpServlet {
 
 ② 使用**WebApplicationContextUtils**获得应用上下文对象**ApplicationContext** 
 
+**1. 导入Spring集成web的坐标**
+
+```xml
+<dependency> 
+  <groupId>org.springframework</groupId> 
+  <artifactId>spring-web</artifactId> 
+  <version>5.0.5.RELEASE</version>
+</dependency>
+```
+
+**2. 配置ContextLoaderListener监听器**
+
+​	==这里是重点哦！！！和SpringMVC集成的时候也是用的这个监听器。否则说在我们的Controller层那个service的自动注入就无法成功！！！==
+
+```xml
+<!--全局参数--> 
+<context-param> 
+  	<param-name>contextConfigLocation</param-name> 
+  	<param-value>classpath:applicationContext.xml</param-value>
+</context-param>
+<!--Spring的监听器--> 
+<listener>
+  	<listener-class>
+			org.springframework.web.context.ContextLoaderListener
+		</listener-class>
+</listener>
+```
+
+**3. 通过工具获得应用上下文对象**
+
+```java
+ApplicationContext applicationContext = 
+WebApplicationContextUtils.getWebApplicationContext(servletContext);
+Object obj = applicationContext.getBean("id");
+```
+
+
+
+# Spring AOP
+
+## 简介
+
+**AOP** 为 **A**spect **O**riented **P**rogramming 的缩写，意思为**面向切面编程**，是通过预编译方式和==运行期== **动态代理** 实现程序功能的统一维护的一种技术。
+
+回顾一下动态代理：javaSE里面。可以松耦合，减少重复代码，完成功能增强！！！
+
+**AOP 是 OOP（面向对象编程） 的延续**，是软件开发中的一个热点，也是Spring框架中的一个重要内容，是函数式编程的一种衍生范型。利用AOP可以对业务逻辑的各个部分进行隔离（松耦合），从而使得业务逻辑各部分之间的耦合度降低，提高程序的可重用性，同时提高了开发的效率。
+
+## **AOP 的作用及其优势**
+
+-  作用：在程序运行期间，在不修改源码的情况下对方法进行功能增强
+-  优势：减少重复代码，提高开发效率，并且便于维护
+
+具体的理解：看HeiMa—SSM—AOP部分
+
+暂且理解，切面的意思就是业务方法与增强方法的结合。
+
+<img src="images/image-20220310153349065.png" alt="image-20220310153349065" style="zoom: 80%;" />
+
+
+
+## **AOP 的底层实现**
+
+AOP 的底层是通过 Spring 提供的的动态代理技术实现的。在运行期间，Spring通过动态代理技术动态的生成代理对象，代理对象方法执行时进行增强功能的介入，再去调用目标对象的方法，从而完成功能的增强。
+
+常用的动态代理技术
+
+-  JDK 代理 : 基于接口的动态代理技术
+-  cglib 代理：基于父类的动态代理技术
+
+<img src="images/image-20220310153603763.png" alt="image-20220310153603763" style="zoom:80%;" />
+
+- 这个JDK的代理方法就是SE部分学习的代理方法。他的一个缺点就是，我们这个业务方法一定是按照接口—实现类的方式写的，他只能基于接口进行代理；他会根据接口动态生成一个代理接口对象，接口里面有的方法，这个代理接口对象里面都有，并且和目标对象重写的内容一样！
+
+- 当没有接口时，cglib是去动态生成一个对象，并且这个对象的父类是我们的目标对象！！是父子关系，但不是通过继承实现的哦，后面会进行详解。
+
+### **JDK 的动态代理**
+
+这里是写的一个具体实现例子，是AOP的底层，以后不用我们自己写，就和之前讲的se部分一样。
+
+目标接口：业务方法
+
+```java
+public interface TargetInterface {
+    public abstract void save();
+}
+```
+
+目标对象：
+
+```java
+public class Target implements TargetInterface{
+    @Override
+    public void save() {
+        System.out.println("saveing ..........");
+    }
+}
+```
+
+增强方法：
+
+```java
+public class Advance {
+
+    public void before(){
+        System.out.println("前置增强。。。。。");
+    }
+
+    public void after(){
+        System.out.println("后置增强。。。。。");
+    }
+}
+```
+
+进行JDK动态代理：
+
+```java
+public class ProxyTest {
+
+    public static void main(String[] args) {
+        // 创建目标对象
+        Target target = new Target();
+
+        // 增强对象
+        Advance advance = new Advance();
+
+        // 第一个参数：目标对象类加载器
+        // 第二个参数：目标对象相同的接口字节码对象数组（接口为多实现）
+        // 第三个参数：核心主方法。调用代理对象的任何方法，实质执行的都是invoke方法。
+        // 返回值：动态生成的接口代理对象
+        TargetInterface proxy = (TargetInterface) Proxy.newProxyInstance(target.getClass().getClassLoader(),
+                target.getClass().getInterfaces(),
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                        advance.before(); // 前置增强
+                        Object invoke = method.invoke(target, args);// 执行目标方法
+                        advance.after(); // 后置增强
+                        return invoke;
+                    }
+                });
+
+        proxy.save();
+
+    }
+}
+```
+
+<img src="images/image-20220310162013319.png" alt="image-20220310162013319" style="zoom: 80%;" />
+
+### **cglib 的动态代理**
+
+这里用的其他团队开发的技术，需要导入jar包。但Spring现在的版本已经把我们集成导入了。
+
+也是AOP的底层原理，后期不用自己写，要理解。
+
+```xml
+<dependency>
+  <groupId>org.springframework</groupId>
+  <artifactId>spring-context</artifactId>
+  <version>5.3.14</version>
+</dependency>
+```
+
+目标对象：业务方法
+
+```java
+public class Target {
+
+    public void save() {
+        System.out.println("saveing ..........");
+    }
+}
+```
+
+增强方法：
+
+```java
+public class Advance {
+
+    public void before(){
+        System.out.println("前置增强。。。。。");
+    }
+
+    public void after(){
+        System.out.println("后置增强。。。。。");
+    }
+}
+```
+
+进行cglib代理实现：
+
+```java
+public class ProxyTest {
+
+    public static void main(String[] args) {
+        // 创建目标对象
+        Target target = new Target();
+
+        // 增强对象
+        Advance advance = new Advance();
+
+        // 返回值为动态代理对象（好东西，需要掌握）
+        // 1. 创建增强器
+        Enhancer enhancer = new Enhancer();
+        // 2. 设置父类（就是目标对象）
+        enhancer.setSuperclass(Target.class);
+        // 3. 设置回调
+        enhancer.setCallback(new MethodInterceptor() {
+            @Override
+            public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
+                // 执行前置增强
+                advance.before();
+                // 执行目标方法
+                Object invoke = method.invoke(target, args);
+                // 执行后置增强
+                advance.after();
+                return invoke;
+            }
+        });
+        // 4. 创建代理对象
+        Target proxy = (Target) enhancer.create();
+        // 5. 测试
+        proxy.save();
+    }
+}
+```
+
+<img src="images/image-20220310164022212.png" alt="image-20220310164022212" style="zoom:80%;" />
+
+
+
+##  **AOP 相关概念**
+
+Spring 的 AOP 实现底层就是对上面的动态代理的代码进行了封装，封装后我们只需要对需要关注的部分进行代码编写，并通过配置的方式完成指定目标的方法增强。
+
+在正式讲解 AOP 的操作之前，我们必须理解 AOP 的相关术语，常用的术语如下：
+
+-  **Target**（目标对象）：代理的目标对象
+-  **Proxy** （代理对象）：一个类被 AOP 织入增强后，就产生一个结果代理类
+-  **Joinpoint**（连接点）：所谓连接点是指那些被拦截到的点。在spring中,这些点指的是方法，因为spring只支持方法类型的连接点。（可以被增强的方法就是连接点）
+
+-   **Pointcut**（切入点）：所谓切入点是指我们要对哪些 Joinpoint 进行拦截的定义（真正被增强的那些方法就是切入点）
+-   **Advice**（通知/ 增强）：所谓通知是指拦截到 Joinpoint 之后所要做的事情就是通知（就是那些增强方法）
+-   **Aspect**（切面）：是切入点和通知（引介）的结合
+-  **Weaving**（织入）：是指把增强应用到目标对象来创建新的代理对象的过程。spring采用动态代理织入，而AspectJ采用编译期织入和类装载期织入 （切点和通知集合的这个过程）
+
+## **AOP 开发明确的事项**
+
+**1. 需要编写的内容**
+
+-  编写核心业务代码（目标类的目标方法，连接点）
+-  编写切面类，切面类中有通知(增强功能方法) 
+-  在配置文件中，配置织入关系，即将哪些通知与哪些连接点进行结合，即指定哪些方法是切点
+
+**2. AOP 技术实现的内容**
+
+Spring 框架监控切入点方法的执行。一旦监控到切入点方法被运行，使用代理机制，动态创建切点方法所在的目标对象的代理对象，根据配置的通知类型，在代理对象的对应位置，将通知对应的功能织入，完成完整的代码逻辑运行。
+
+**3. AOP 底层使用哪种代理方式**
+
+在 spring 中，框架会根据目标类是否实现了接口来决定采用哪种动态代理的方式。很聪明哦！ 
+
+## 前期知识点总结
+
+-  aop：面向切面编程
+-  aop底层实现：基于JDK的动态代理 和 基于Cglib的动态代理
+-  aop的重点概念：
+
+​			Pointcut（切入点）：被增强的方法
+
+​			Advice（通知/ 增强）：封装增强业务逻辑的方法
+
+​			Aspect（切面）：切点+通知
+
+​			Weaving（织入）：将切点与通知结合的过程
+
+-  开发明确事项：
+
+​			谁是切点（切点表达式配置）
+
+​			谁是通知（切面类中的增强方法）
+
+​			将切点和通知进行织入配置
+
+##基于 XML 的 AOP 开发
+
+### **快速入门**
+
+① 导入 AOP 相关坐标（aspectJ）
+
+② 创建目标接口和目标类（内部有切点）
+
+③ 创建切面类（内部有增强方法）
+
+④ 将目标类和切面类的对象创建权交给 spring
+
+⑤ 在 applicationContext.xml 中配置织入关系
+
+⑥ 测试代码
+
+第一步：
+
+这里采用AspectJ这个轻量级框架进行AOP的实现，spring内部也进行了AOP思想的实现，但spring的方式没有aspectJ的这个好！，后期spring官方也推荐大家使用aspectJ来实现aop。
+
+```xml
+<dependency>
+  <groupId>org.springframework</groupId>
+  <artifactId>spring-context</artifactId>
+  <version>5.3.14</version>
+</dependency>
+<dependency>
+  <groupId>org.aspectj</groupId>
+  <artifactId>aspectjweaver</artifactId>
+  <version>1.9.6</version>
+</dependency>
+```
+
+第二步：创建目标接口和目标类（内部有切点）
+
+依然还是之前的简单实现
+
+```java
+public interface TargetInterface {
+    public abstract void save();
+}
+
+// 实现类
+public class Target implements TargetInterface {
+    @Override
+    public void save() {
+        System.out.println("saveing ..........");
+    }
+}
+```
+
+第三步：创建切面类（内部有增强方法）
+
+```java
+public class MyAspect {
+
+    public void before(){
+        System.out.println("前置增强。。。。。");
+    }
+}
+```
+
+第四步：将目标类和切面类的对象创建权交给 spring，并且配置织入关系。
+
+​		要引入aop的命名空间和真实地址。
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+">
+
+<!--    目标对象-->
+    <bean id="target" class="com.CCooky.aop.Target"></bean>
+<!--    切面对象-->
+    <bean id="myAspect" class="com.CCooky.aop.MyAspect"></bean>
+<!--    配置织入：告诉spring框架哪些方法（切点）需要进行哪些增强（通知）-->
+    <aop:config>
+        <!--声明切面类-->
+        <aop:aspect ref="myAspect">
+            <!--
+            切面：切点+通知
+                before：指明通知的类型（前置增强）
+                method：指定使用哪个增强方法
+                pointcut: 指定哪个业务方法被增强（指定切点）
+            -->
+            <aop:before method="before" pointcut="execution(public void com.CCooky.aop.Target.save())"/>
+        </aop:aspect>
+    </aop:config>
+</beans>
+```
+
+第五步：测试代码。这里用Spring集成的那个junit，而不是单独的junit，需要先导入依赖。
+
+```xml
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+<!--      <scope>test</scope>-->
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <version>5.3.14</version>
+    </dependency>
+```
+
+```java
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration("classpath:applicationContext.xml")
+public class AopTest {
+
+    @Autowired	// 根据字节码文件从容器里面找对象，并注入
+    private TargetInterface target;
+
+    @Test
+    public void test1(){
+        target.save();
+    }
+}
+```
+
+<img src="images/image-20220310201523754.png" alt="image-20220310201523754" style="zoom:80%;" />
+
+666666666666666666666666666666666666666666666666666666666
+
+### **XML 配置 AOP 详解**
+
+主要就是aop那一段配置。
+
+```xml
+<!--    配置织入：告诉spring框架哪些方法（切点）需要进行哪些增强（通知）-->
+    <aop:config>
+        <!--声明切面类-->
+        <aop:aspect ref="myAspect">
+            <aop:before method="before" pointcut="execution(public void com.CCooky.aop.Target.save())"/>
+            <!--
+            	切面：切点+通知
+                before：指明通知的类型（前置增强）
+                method：指定使用哪个增强方法
+                pointcut: 指定哪个业务方法被增强（指定切点）
+            -->
+        </aop:aspect>
+    </aop:config>
+```
+
+#### **1. 切点表达式的写法**
+
+```java
+<aop:before method="before" 
+  pointcut="execution(public void com.CCooky.aop.Target.save())"/>
+```
+
+表达式语法：
+
+```
+execution([修饰符] 返回值类型 包名.类名.方法名(参数))
+```
+
+-  访问修饰符可以省略，默认public
+-  返回值类型、包名、类名、方法名可以使用星号 * ( 通配符）代表任意
+-  包名与类名之间一个点 . 代表当前包下的类，两个点 .. 表示当前包及其子包下的类
+-  参数列表可以使用 两个点 ..  表示任意个数，任意类型的参数列表
+
+例如：
+
+```
+execution(public void com.itheima.aop.Target.method())
+execution(void com.itheima.aop.Target.*(..))
+execution(* com.itheima.aop.*.*(..))
+execution(* com.itheima.aop..*.*(..))
+execution(* *..*.*(..))
+```
+
+**切点表达式的抽取**
+
+当多个增强方法的切点表达式相同时，可以将切点表达式进行抽取，在增强中使用 **pointcut-ref** 属性代替 pointcut 属性来引用抽取后的切点表达式！！！
+
+例如，现在是这种情况：
+
+```xml
+<!--    目标对象-->
+    <bean id="target" class="com.CCooky.aop.Target"></bean>
+<!--    切面对象-->
+    <bean id="myAspect" class="com.CCooky.aop.MyAspect"></bean>
+<!--    配置织入：告诉spring框架哪些方法（切点）需要进行哪些增强（通知）-->
+    <aop:config>
+        <!--声明切面类-->
+        <aop:aspect ref="myAspect">  
+          
+            <!--声明切点-->
+            <aop:before method="before" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+            <aop:after-returning method="afterReturningggg" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+        </aop:aspect>
+    </aop:config>
+```
+
+将那个piontcut切点表达式的抽取出来！！！如下：
+
+```xml
+<!--    目标对象-->
+    <bean id="target" class="com.CCooky.aop.Target"></bean>
+<!--    切面对象-->
+    <bean id="myAspect" class="com.CCooky.aop.MyAspect"></bean>
+<!--    配置织入：告诉spring框架哪些方法（切点）需要进行哪些增强（通知）-->
+    <aop:config>
+        <!--声明切面类-->
+        <aop:aspect ref="myAspect">
+          
+            <!--切点表达式抽取-->
+            <aop:pointcut id="myPointcut" expression="execution(* com.CCooky.aop.*.*(..))"/>
+            <!--声明切点-->
+            <aop:before method="before" pointcut-ref="myPointcut"/>
+            <aop:after-returning method="afterReturning" pointcut-ref="myPointcut"/>
+    </aop:config>
+</beans>
+```
+
+#### **2. 通知的类型**
+
+通知的配置语法：
+
+```
+<aop:通知类型 method=“切面类中方法名” pointcut=“切点表达式"></aop:通知类型>
+```
+
+| **名称**     | **标签**               | **说明**                                 |
+| ------------ | ---------------------- | ---------------------------------------- |
+| 前置通知     | < aop:before>          | 指定增强方法在切入点方法之前执行         |
+| 后置通知     | < aop:after-returning> | 指定增强方法在切入点方法之后执行         |
+| 环绕通知     | < aop:around>          | 指定增强方法在切入点方法之前和之后都执行 |
+| 异常抛出通知 | < aop:after-throwing>  | 指定增强方法在切入点方法出现异常时执行   |
+| 最终通知     | < aop:after>           | 无论切点方法是否有异常，增强方法都会执行 |
+
+**Example**
+
+1. 后置通知
+
+   ```java
+   public class MyAspect {
+   
+       public void before(){
+           System.out.println("前置增强。。。。。");
+       }
+   
+       public void afterReturningggg(){
+           System.out.println("后置增强。。。。。");
+       }
+   }
+   ```
+
+   ```xml
+   <!--    目标对象-->
+       <bean id="target" class="com.CCooky.aop.Target"></bean>
+   <!--    切面对象-->
+       <bean id="myAspect" class="com.CCooky.aop.MyAspect"></bean>
+   <!--    配置织入：告诉spring框架哪些方法（切点）需要进行哪些增强（通知）-->
+       <aop:config>
+           <!--声明切面类-->
+           <aop:aspect ref="myAspect">
+               <!--声明切点-->
+               <aop:before method="before" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+               <aop:after-returning method="afterReturningggg" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+           </aop:aspect>
+       </aop:config>
+   ```
+
+   <img src="images/image-20220312182644124.png" alt="image-20220312182644124" style="zoom:80%;" />
+
+2. 环绕通知
+
+   ```java
+   public class MyAspect {
+   
+       public void before(){
+           System.out.println("前置增强。。。。。");
+       }
+   
+       public void afterReturningggg(){
+           System.out.println("后置增强。。。。。");
+       }
+   
+       public Object arounddd(ProceedingJoinPoint pjp) throws Throwable {
+           System.out.println("环绕前增强。。。。。");
+           // 这里执行切点方法
+           Object proceed = pjp.proceed();
+           System.out.println("环绕后增强。。。。。");
+           return proceed;
+       }
+   }
+   ```
+
+   ```xml
+   <!--    目标对象-->
+       <bean id="target" class="com.CCooky.aop.Target"></bean>
+   <!--    切面对象-->
+       <bean id="myAspect" class="com.CCooky.aop.MyAspect"></bean>
+   <!--    配置织入：告诉spring框架哪些方法（切点）需要进行哪些增强（通知）-->
+       <aop:config>
+           <!--声明切面类-->
+           <aop:aspect ref="myAspect">
+               <!--声明切点-->
+               <aop:before method="before" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+               <aop:after-returning method="afterReturningggg" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+               <aop:around method="arounddd" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+           </aop:aspect>
+       </aop:config>
+   ```
+
+   <img src="images/image-20220312182811697.png" alt="image-20220312182811697" style="zoom:80%;" />
+
+3. 异常抛出通知
+
+   ```java
+   public class MyAspect {
+   
+       public void before(){
+           System.out.println("前置增强。。。。。");
+       }
+   
+       public void afterReturningggg(){
+           System.out.println("后置增强。。。。。");
+       }
+   
+       public Object arounddd(ProceedingJoinPoint pjp) throws Throwable {
+           System.out.println("环绕前增强。。。。。");
+           // 这里执行切点方法
+           Object proceed = pjp.proceed();
+           System.out.println("环绕后增强。。。。。");
+           return proceed;
+       }
+   
+       public void thorw(){
+           System.out.println("异常抛出通知。。。。。");
+       }
+   }
+   ```
+
+   ```xml
+   <!--    目标对象-->
+       <bean id="target" class="com.CCooky.aop.Target"></bean>
+   <!--    切面对象-->
+       <bean id="myAspect" class="com.CCooky.aop.MyAspect"></bean>
+   <!--    配置织入：告诉spring框架哪些方法（切点）需要进行哪些增强（通知）-->
+       <aop:config>
+           <!--声明切面类-->
+           <aop:aspect ref="myAspect">
+               <!--声明切点-->
+               <aop:before method="before" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+               <aop:after-returning method="afterReturningggg" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+               <aop:around method="arounddd" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+               <aop:after-throwing method="thorw" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+           </aop:aspect>
+       </aop:config>
+   ```
+
+   <img src="images/image-20220312182944537.png" alt="image-20220312182944537" style="zoom:80%;" />
+
+4. 最终通知
+
+```java
+public class MyAspect {
+
+    public void before(){
+        System.out.println("前置增强。。。。。");
+    }
+
+    public void afterReturningggg(){
+        System.out.println("后置增强。。。。。");
+    }
+
+    public Object arounddd(ProceedingJoinPoint pjp) throws Throwable {
+        System.out.println("环绕前增强。。。。。");
+        // 这里执行切点方法
+        Object proceed = pjp.proceed();
+        System.out.println("环绕后增强。。。。。");
+        return proceed;
+    }
+
+    public void thorw(){
+        System.out.println("异常抛出通知。。。。。");
+    }
+
+    public void after(){
+        System.out.println("最终通知。。。。。");
+    }
+}
+```
+
+```xml
+<!--    目标对象-->
+    <bean id="target" class="com.CCooky.aop.Target"></bean>
+<!--    切面对象-->
+    <bean id="myAspect" class="com.CCooky.aop.MyAspect"></bean>
+<!--    配置织入：告诉spring框架哪些方法（切点）需要进行哪些增强（通知）-->
+    <aop:config>
+        <!--声明切面类-->
+        <aop:aspect ref="myAspect">
+            <!--声明切点-->
+            <aop:before method="before" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+            <aop:after-returning method="afterReturningggg" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+            <aop:around method="arounddd" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+            <aop:after method="after" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+            <aop:after-throwing method="thorw" pointcut="execution(* com.CCooky.aop.*.*(..))"/>
+        </aop:aspect>
+    </aop:config>
+```
+
+<img src="images/image-20220312183057477.png" alt="image-20220312183057477" style="zoom:80%;" />
+
+
+
+## 基于注解的 AOP 开发
+
+### **快速入门**
+
+基于注解的aop开发步骤：
+
+① 创建目标接口和目标类（内部有切点方法）（上同）
+
+② 创建切面类（内部有增强方法）（上同）
+
+③ **使用注解将目标类和切面类的对象创建权交给 spring**
+
+④ **在切面类中使用注解配置织入关系**
+
+⑤ **在配置文件中开启组件扫描和 AOP 的自动代理**
+
+⑥ 测试
+
+目标接口与目标类
+
+```java
+public interface TargetInterface {
+    public abstract void save();
+}
+```
+
+```java
+@Component("target")
+public class Target implements TargetInterface {
+    @Override
+    public void save() {
+        System.out.println("saveing ..........");
+    }
+}
+```
+
+切面类
+
+```java
+@Component("myAspect")
+@Aspect   // 标示该类为切面类
+public class MyAspect {
+
+    // 配置织入（指定通知类型，和切点表达式）
+    @Before("execution(* com.CCooky.anno.*.*(..))")
+    public void before(){
+        System.out.println("前置增强。。。。。");
+    }
+    
+}
+```
+
+applicationContext-anno.xml配置文件
+
+```xml
+<!--        组件扫描-->
+    <context:component-scan base-package="com.CCooky.anno"/>
+<!--    配置AOP的自动代理-->
+    <aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+```
+
+测试
+
+```java
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration("classpath:applicationContext-anno.xml")
+public class AnnoTest {
+
+    @Autowired
+    private TargetInterface target;
+
+    @Test
+    public void test1(){
+        target.save();
+    }
+}
+```
+
+### 通知类型
+
+通知的配置语法：@通知注解(”切点表达式“)
+
+@Before("execution(* com.CCooky.anno.*.*(..))")
+
+<img src="images/image-20220312191858334.png" alt="image-20220312191858334" style="zoom:80%;" />
+
+### **切点表达式的抽取**
+
+同 xml 配置 aop 一样，我们可以将切点表达式抽取。抽取方式是**在切面类内定义方法**，在该方法上使用@Pointcut注解定义切点表达式，方法内部什么都不用写，然后在在增强方法注解中进行引用。具体如下：
+
+```java
+@Component("myAspect")
+@Aspect   // 标示该类为切面类
+public class MyAspect {
+
+    // 配置织入（指定通知类型，和切点方法）
+    @Before("pointcut()")
+    public void before(){
+        System.out.println("前置增强。。。。。");
+    }
+
+    // 定义切点表达式
+    @Pointcut("execution(* com.CCooky.anno.*.*(..))")
+    public void pointcut(){}
+
+}
+```
+
+# Spring **声明式**事务控制
+
+就是对业务方法进行事务控制。之前的事务控制都是针对于数据库而言的，例如mybatis里面commit等等。
+
+## 编程式事务控制相关对象
+
+编程式事务控制三大对象
+
+-  PlatformTransactionManager
+-  TransactionDefinition
+-  TransactionStatus
+
+前两个对象决定了第三个对象的信息。
+
+**首先，先介绍这种编程式的事务控制方法（就是之前mybatis学的那种），他是通过我们人工自己写代码进行事务控制！！！（Dao层）。这也是Spring的声明式事务的底层**
+
+==**1. PlatformTransactionManager（平台事务管理器）**==
+
+PlatformTransactionManager 接口是 spring 的事务管理器，它里面提供了我们常用的操作事务的方法。
+
+<img src="images/image-20220312192947939.png" alt="image-20220312192947939" style="zoom:80%;" />
+
+**注意：**
+
+PlatformTransactionManager 是接口类型，不同的 Dao 层技术，spring则有不同的实现类。
+
+例如：
+
+- Dao 层技术是jdbc 或 mybatis 时：		  																						org.springframework.jdbc.datasource.DataSourceTransactionManager 
+- Dao 层技术是hibernate时：org.springframework.orm.hibernate5.HibernateTransactionManager
+
+==**2. TransactionDefinition（事务通知的配置）**==
+
+TransactionDefinition 是事务的定义对象，里面有如下方法：
+
+<img src="images/image-20220312193228147.png" alt="image-20220312193228147" style="zoom:80%;" />
+
+**事务隔离级别**
+
+设置隔离级别，可以解决事务并发产生的问题，如脏读、不可重复读和虚读。
+
+- ISOLATION_DEFAULT
+- ISOLATION_READ_UNCOMMITTED（读未提交）
+- ISOLATION_READ_COMMITTED（读已提交）
+- ISOLATION_REPEATABLE_READ（可重复读）
+- ISOLATION_SERIALIZABLE（串行化）
+
+**事务传播行为**
+
+解决问题：我们业务方法中可能出现A方法去调用B方法的情况，那此时A、B的事务可能就出现冲突之类的。
+
+下面这么多的处理情况是：A方法，调用B方法。然后下面所有的主语都是B方法。是B去判断A的事务情况，然后做出反应
+
+-  **REQUIRED：如果A当前没有事务，就新建一个事务，如果已经存在一个事务中，加入到这个事务中。一般的选择（默认值）**
+-  **SUPPORTS：支持当前事务，如果当前没有事务，就以非事务方式执行（没有事务）**
+-  MANDATORY：使用当前的事务，如果当前没有事务，就抛出异常
+-  REQUERS_NEW：新建事务，如果当前在事务中，把当前事务挂起。
+-  NOT_SUPPORTED：以非事务方式执行操作，如果当前存在事务，就把当前事务挂起
+-  NEVER：以非事务方式运行，如果当前存在事务，抛出异常
+-  NESTED：如果当前存在事务，则在嵌套事务内执行。如果当前没有事务，则执行 REQUIRED 类似的操作
+- **超时时间：默认值是-1，没有超时限制。如果有，以秒为单位进行设置**
+- **是否只读：建议查询时设置为只读**
+
+==**3. TransactionStatus**==
+
+TransactionStatus 接口提供的是事务的状态信息，这是被动的信息，方法介绍如下
+
+<img src="images/image-20220312194731317.png" alt="image-20220312194731317" style="zoom:80%;" />
+
+## 基于 XML 的声明式事务控制
+
+**什么是声明式事务控制**
+
+Spring 的声明式事务顾名思义就是采用声明的方式来处理事务。这里所说的声明，就是指在配置文件中声明，将在 Spring 配置文件中声明式的处理事务来代替代码式的处理事务
+
+**声明式事务处理的作用**
+
+-  **事务管理不侵入开发的组件。**具体来说，业务逻辑对象就不会意识到正在事务管理之中，事实上也应该如此，因为事务管理是属于系统层面的服务，而不是业务逻辑的一部分，如果想要改变事务管理策划的话，也只需要在定义文件中重新配置即可。==（这就是AOP的思想！！！哇，666，我们的开发就是切点，事务控制就是增强方法）==
+-  **维护起来极其方便。**在不需要事务管理的时候，只要在设定文件上修改一下，即可移去事务管理服务，无需改变代码重新编译，这样维护起来极其方便
+
+​	==**注意：Spring 声明式事务控制底层就是AOP。**==
+
+**声明式事务控制的实现**
+
+​	声明式事务控制明确事项：
+
+-  谁是切点？被增强的业务方法
+-  谁是通知？事务控制
+-  配置切面？织入配置
+
+① 引入tx命名空间
+
+<img src="images/image-20220312203548726.png" alt="image-20220312203548726" style="zoom:67%;" />
+
+② 配置事务增强
+
+这里shi重点关注的东西，他对应的就是前面说的三大事务对象中的第二个控制事务属性的事务定义对象。
+
+```xml
+<!--    配置平台事务管理器-->
+    <bean id="transctionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+<!--  事务增强配置-->
+    <tx:advice id="txAdvice" transaction-manager="transctionManager">
+      <!--设置事务的属性信息-->
+        <tx:attributes>
+          	<!--name 是被增强的方法名-->
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
+```
+
+③ 配置事务 AOP 织入
+
+前面我们都是配的aspect，其实这里也是aspect，只是说Spring单独给我们整了一个名字，专门用来标示这是事务配置的织入而已。
+
+```xml
+<!--    配置事务AOP织入-->
+    <aop:config>
+        <aop:advisor advice-ref="txAdvice" pointcut="execution(* com.itheima.service.impl.*.*(..))"/>
+    </aop:config>
+```
+
+这样就给业务层的所有方法配置了事务管理。必须要业务层的该方法全部执行完，才会向数据库提交事务。总体的xml配置内容如下：
+
+```xml
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="com.mysql.jdbc.Driver"/>
+        <property name="jdbcUrl" value="jdbc:mysql://localhost:3306/test"/>
+        <property name="user" value="root"/>
+        <property name="password" value="root"/>
+    </bean>
+
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <bean id="accountDao" class="com.itheima.dao.impl.AccountDaoImpl">
+        <property name="jdbcTemplate" ref="jdbcTemplate"/>
+    </bean>
+<!--     目标对象 内部的方法就是切点-->
+    <bean id="accountService" class="com.itheima.service.impl.AccountServiceImpl">
+        <property name="accountDao" ref="accountDao"/>
+    </bean>
+
+    <!--  从这里往下就是事务控制的实现  -->
+<!--    配置平台事务管理器-->
+    <bean id="transctionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+<!--    通知 事务的增强配置-->
+    <tx:advice id="txAdvice" transaction-manager="transctionManager">
+      <!--设置事务的属性信息-->
+        <tx:attributes>
+           	<!--name 是被增强的方法名-->
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
+<!--    配置事务AOP织入-->
+    <aop:config>
+        <aop:advisor advice-ref="txAdvice" pointcut="execution(* com.itheima.service.impl.*.*(..))"/>
+    </aop:config>
+```
+
+### **事务增强的详细配置**
+
+也就是快速入门的第二步。
+
+每个方法可以配置不同的事务管理方法。
+
+```xml
+<!--    通知 事务的增强-->
+    <tx:advice id="txAdvice" transaction-manager="transctionManager">
+        <!--设置事务的属性信息-->
+        <tx:attributes>
+            <!--name 是被增强的方法名-->
+            <tx:method name="transfer" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="false"/>
+            <tx:method name="findAll" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="true"/>
+  <!--update*  里面这个*是通配符，表示只要是update开头的方法都用这个事务控制 -->
+            <tx:method name="update*" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="true"/>
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
+```
+
+<img src="images/image-20220312213604418.png" alt="image-20220312213604418" style="zoom:80%;" />
+
+其中，< tx:method> 代表切点方法的事务参数的配置，例如：
+
+```xml
+<tx:method name="transfer" isolation="REPEATABLE_READ" propagation="REQUIRED" timeout="-1" read-only="false"/>
+```
+
+-  name：切点方法名称
+-  isolation:事务的隔离级别
+-  propogation：事务的传播行为
+-  timeout：超时时间
+-  read-only：是否只读
+
+## 基于注解的声明式事务控制
+
+前面w吗所有的配置都是用的xml，包括dao、service层bean的声明。有一个规范就是说，我们自己写的代码声明bean的时候都用注解，用的别人的工具时就用配置文件声明。
+
+​	之前的配置文件内容如下：
+
+```XML
+ <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="com.mysql.jdbc.Driver"/>
+        <property name="jdbcUrl" value="jdbc:mysql://localhost:3306/test"/>
+        <property name="user" value="root"/>
+        <property name="password" value="root"/>
+    </bean>
+
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <bean id="accountDao" class="com.itheima.dao.impl.AccountDaoImpl">
+        <property name="jdbcTemplate" ref="jdbcTemplate"/>
+    </bean>
+<!--     目标对象 内部的方法就是切点-->
+    <bean id="accountService" class="com.itheima.service.impl.AccountServiceImpl">
+        <property name="accountDao" ref="accountDao"/>
+    </bean>
+
+    <!--  从这里往下就是事务控制的实现  -->
+<!--    配置平台事务管理器-->
+    <bean id="transctionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+<!--    通知 事务的增强配置-->
+    <tx:advice id="txAdvice" transaction-manager="transctionManager">
+      <!--设置事务的属性信息-->
+        <tx:attributes>
+           	<!--name 是被增强的方法名-->
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
+<!--    配置事务AOP织入-->
+    <aop:config>
+        <aop:advisor advice-ref="txAdvice" pointcut="execution(* com.itheima.service.impl.*.*(..))"/>
+    </aop:config>
+```
+
+接下来，我们一个个用注解去替代这些配置。
+
+**第一步：**把dao和service层的去掉，这个很简单就不说了。
+
+**第二步：**就是事务控制那里，**平台事务管理器**是Spring给我们提供的，所以只能用配置文件；**事务通知配置、事务织入**可以去掉，直接加在业务方法里面。
+
+​			用到的注解是@Transactional。既可以标示方法也可以标示在类上面。标示在类上，就是将该事务配置应用到该类的所有方法。那假如单独在方法上又写了一个@Transactional，那就是就近原则。
+
+```java
+@Service("accountService")
+@Transactional(isolation = Isolation.READ_UNCOMMITTED)
+public class AccountServiceImpl implements AccountService {
+  
+		@Autowired
+    private AccountDao accountDao;
+
+    @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED,readOnly = true)
+    public void transfer(String outMan, String inMan, double money) {
+        //  开启事务
+        accountDao.out(outMan,money);
+        accountDao.in(inMan,money);
+         // 提交事务
+    }
+}
+```
+
+**第三步：**组件扫描以及事务注解驱动。
+
+​			注意没有配置注解驱动的话，是不可能生效的哦。原因在于前面说了Spring声明式事务控制的底层就是AOP，当我们用配置文件写的时候，Spring检测到了会自动调用aop的动态代理；而当我们用注解写的时候，spring就不会自动去开启动态代理，而是需要我们手动开启，也就是这个注解的作用。
+
+```xml
+    <!--组件扫描-->
+    <context:component-scan base-package="com.CCooky"/>
+    <!--事务的注解驱动-->
+    <tx:annotation-driven transaction-manager="transctionManager"/>
+```
+
+最后配置文件剩下的内容为：
+
+```xml
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="com.mysql.jdbc.Driver"/>
+        <property name="jdbcUrl" value="jdbc:mysql://localhost:3306/test"/>
+        <property name="user" value="root"/>
+        <property name="password" value="root"/>
+    </bean>
+
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+<!--    配置平台事务管理器-->
+    <bean id="transctionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!--组件扫描-->
+    <context:component-scan base-package="com.CCooky"/>
+    <!--事务的注解驱动-->
+    <tx:annotation-driven transaction-manager="transctionManager"/>
+```
+
+**配置要点总结**
+
+-  平台事务管理器配置（xml方式）
+-  事务通知的配置（@Transactional注解配置）
+-  事务注解驱动的配置 < tx:annotation-driven/>
