@@ -71,7 +71,9 @@
 
 **SpringMVC** 是一种基于 Java 的实现 **MVC 设计模型**的请求驱动类型的轻量级 **Web 框架**，属于**SpringFrameWork** 的后续产品，已经融合在 Spring Web Flow 中。
 
-SpringMVC 已经成为目前最主流的MVC框架之一，并且随着Spring3.0 的发布，全面超越 Struts2，成为最优秀的 MVC 框架。==它通过一套注解，让一个简单的 Java 类成为处理请求的控制器，而无须实现任何接口==。同时它还支持 **RESTful** 编程风格的请求。
+SpringMVC 已经成为目前最主流的MVC框架之一，并且随着Spring3.0 的发布，全面超越 Struts2，成为最优秀的 MVC 框架。
+
+==它通过一套注解，让一个简单的 Java 类成为处理请求的控制器，而无须实现任何接口==。同时它还支持 **RESTful** 编程风格的请求。
 
 <img src="images/image-20220303201310244.png" alt="image-20220303201310244" style="zoom:80%;" />
 
@@ -507,9 +509,9 @@ public User quick4(){
 
 <img src="images/image-20220305112932137.png" alt="image-20220305112932137" style="zoom:80%;" />
 
-在 SpringMVC 的各个组件中，**处理器映射器**、**处理器适配器**、**视图解析器**称为 SpringMVC 的三大组件。使用<mvc:annotation-driven>自动加载 RequestMappingHandlerMapping（处理映射器）和RequestMappingHandlerAdapter（ 处 理 适 配 器 ），可用在Spring-xml.xml配置文件中使用<mvc:annotation-driven>替代注解处理器和适配器的配置!!!
+在 SpringMVC 的各个组件中，**处理器映射器**、**处理器适配器**、**视图解析器**称为 SpringMVC 的三大组件。使用**<mvc:annotation-driven >**自动加载 RequestMappingHandlerMapping（处理映射器）和RequestMappingHandlerAdapter（ 处 理 适 配 器 ），可用在Spring-xml.xml配置文件中使用**<mvc:annotation-driven >**替代注解处理器和适配器的配置!!!
 
-同时使用<mvc:annotation-driven>默认底层就会**集成jackson**进行对象或集合的json格式字符串的转换。==（这里要先导入jsckson的依赖哦，mvc里面自己是没有的）==
+同时使用**<mvc:annotation-driven >**默认底层就会**集成jackson**进行对象或集合的json格式字符串的转换。==（这里要先导入jsckson的依赖哦，mvc里面自己是没有的）==
 
 ```xml
 <dependency>
@@ -658,7 +660,7 @@ public void quickMethod4(HttpServletResponse response) throws IOException {
 
 <img src="images/image-20220304165155875.png" alt="image-20220304165155875" style="zoom:67%;" />
 
-② 将需要回写的字符串直接返回，但此时需要通过**@ResponseBody**注解告知SpringMVC框架，方法返回的字符串不是跳转而是直接在http响应体中返回。（常用）
+**② 将需要回写的字符串直接返回，但此时需要通过@ResponseBody注解告知SpringMVC框架**，方法返回的字符串不是跳转而是直接在http响应体中返回。（常用）
 
 ```java
 @RequestMapping("/quick5")
@@ -696,6 +698,8 @@ public String quick4(){
 ```
 
 还是不写，这个让我们自己转换太麻烦，重复代码工作。所以强大的SpringMVC提供了自动JSON串转功能，但需要我们自己去指定用什么工具转换。
+
+
 
 ## 5. SpringMVC获取请求数据
 
@@ -1196,7 +1200,7 @@ Spring MVC 的**拦截器**类似于 Servlet 开发中的过滤器 Filter，用�
 public class MyHandlerIntercepter implements HandlerInterceptor {
 
     @Override
-    // ------目标方法执行，视图对象返回
+    // ---拦截器---目标方法执行，视图对象返回
 		public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         System.out.println("preHandle");
         String param = request.getParameter("param");
@@ -1209,13 +1213,13 @@ public class MyHandlerIntercepter implements HandlerInterceptor {
     }
 
     @Override
-    // 目标方法执行-----视图对象返回
+    // 目标方法执行---拦截器---视图对象返回
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
         System.out.println("postHandle");
     }
     
     @Override
-  	// 目标方法执行，视图对象返回-----
+  	// 目标方法执行，视图对象返回---拦截器---
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         System.out.println("afterCompletion");
     }
@@ -1238,7 +1242,7 @@ public class MyHandlerIntercepter implements HandlerInterceptor {
 第三步：
 
 ```java
-@RequestMapping("/target")
+@GetMapping("/target")
 public ModelAndView show(){
     System.out.println("目标资源执行。。。。。");
     ModelAndView modelAndView = new ModelAndView();
@@ -1266,25 +1270,23 @@ public ModelAndView show(){
 | postHandle( )      | 该方法是在当前请求进行处理之后被调用，前提是preHandle 方法的返回值为true 时才能被调用，且它会在DispatcherServlet 进行视图返回渲染之前被调用，所以我们可以在这个方法中对Controller 处理之后的ModelAndView 对象进行操作 |
 | afterCompletion( ) | 该方法将在整个请求结束之后，也就是在DispatcherServlet 渲染了对应的视图之后执行，前提是preHandle 方法的返回值为true 时才能被调用 |
 
-###  **案例**
 
-**用户登录权限控制**
-
-需求：用户没有登录的情况下，不能对后台菜单进行访问操作，点击菜单跳转到登录页面，只有用户登录成功后才能进行后台功能的操作。
-
-<img src="images/image-20220306100033857.png" alt="image-20220306100033857" style="zoom:80%;" />
 
 
 
 ## 7. **SpringMVC异常处理**
 
-**回顾：**之前的异常处理机制，我们都采用的try-catch机制，这样做的效果就是在业务层写了很多重复代码，但这都不是最重要的，最主要的是我们异常处理与源码完全耦合在了一起，后期出了异常，我们也不方便去找到具体是哪里的异常。所以SpringMVC帮我们做了一个组件，用来专门处理源码中的异常。这样异常处理 与我们的源码完全解耦！！！
+**回顾：**之前的异常处理机制，我们都==采用的try-catch机制==，这样做的效果就是==在业务层写了很多重复代码==，但这都不是最重要的，最主要的是==我们异常处理与源码完全耦合在了一起，后期出了异常，我们也不方便去找到具体是哪里的异常==。所以SpringMVC帮我们做了一个组件，用来专门处理源码中的异常。这样异常处理 与我们的源码完全解耦！！！
 
-系统中异常包括两类：**编译异常**和**运行时异常RuntimeException**，前者通过捕获异常从而获取异常信息，后者主要通过规范代码开发、测试等手段减少运行时异常的发生。
+Exception中异常包括两类：**编译异常**和**运行时异常RuntimeException**。
 
-**SpringMvc处理：**系统的**Dao**、**Service**、**Controller**出现都通过throws Exception向上抛出，最后由SpringMVC前端控制器交由异常处理器进行异常处理，如下图：
+**SpringMVC异常处理方式：**
+
+​	代码只管用throws Exception向上抛出，也包括了Controller层，最后由SpringMVC前端控制器交由异常处理器进行异常处理，如下图：
 
 <img src="images/image-20220306104747767.png" alt="image-20220306104747767" style="zoom:80%;" />
+
+
 
 ### **异常处理两种方式**
 
@@ -1297,7 +1299,7 @@ public ModelAndView show(){
 
 第一个属性：是默认的错误视图，即假如第二个异常类型里面没有匹配到的，就会走该情况。
 
-第二个属性：可以自己写每个不同异常情况下，我们跳转的视图。
+第二个属性：针对每个不同异常下，设置跳转的视图。
 
 注意：这里的value是我们的视图名称哦，只是我们在spring-mvc.xml里面配置了前后缀了。
 

@@ -43,7 +43,7 @@
 
 ### 概述
 
-Spring是分层的 Java SE/EE应用 full-stack 轻量级开源框架，以 **IoC**（Inverse Of Control：反转控制）和**AOP**（Aspect Oriented Programming：面向切面编程）为内核。
+Spring是分层的 Java SE/EE应用 full-stack 轻量级开源框架，以 **IoC（Inverse Of Control：反转控制）**和**AOP（Aspect Oriented Programming：面向切面编程）**为内核。
 
 提供了**表现层 SpringMVC** 和**持久层 Spring JDBCTemplate** 以及**业务层事务管理**等众多的企业级应用技术，还能整合开源世界众多著名的第三方框架和类库，逐渐成为使用最多的Java EE 企业应用开源框架。
 
@@ -51,7 +51,7 @@ Spring是分层的 Java SE/EE应用 full-stack 轻量级开源框架，以 **IoC
 
 <img src="images/image-20220226101847955.png" alt="image-20220226101847955" style="zoom:80%;" />
 
-<img src="images/image-20220226101859718.png" alt="image-20220226101859718" style="zoom:80%;" />
+<img src="images/image-20220226101859718.png" alt="image-20220226101859718" style="zoom: 67%;" />
 
 可见，Spring是业务逻辑层的框架。
 
@@ -113,6 +113,8 @@ IDEA具体实现：
 
 1. 创建好web模块
 
+   
+
 2. Pom.xml文件添加Spring的依赖
 
    ```xml
@@ -144,9 +146,9 @@ public class UserDaoImpl implements UserDao {
 }
 ```
 
-5. 在核心配置文件中配置UserDao的实现类**UserDaoImpl**。
+5. **在核心配置文件中配置UserDao的实现类UserDaoImpl。**
 
-   这样最后通过反射得到的对象就是这个实现类。
+   这样最后**通过反射得到**的对象就是这个实现类。
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -174,15 +176,19 @@ public class UserDaoImpl implements UserDao {
 
 ==总结==
 
-从这里可以看出，我们以后的Service层与dao层就完全解耦了，当dao层的实现类发生改变时，只需要动一下配置文件就行了，service完全不用动。
+==从这里可以看出，我们以后的dao层与daoi层就完全解耦了==，当dao层的实现类需要更换时时，只需要动一下配置文件就行了，代码部分全不用动。之前那种我们都是代码里面new的实现类然后进行多态。
+
+
+
+
 
 ## 3. Spring配置文件
 
 ### Bean
 
-用于配置对象交由**Spring** 来创建。
+用于**配置对象交由Spring 来创建。**
 
-默认情况下它调用的是类中的**无参构造函数**，如果没有无参构造函数则不能创建成功。
+默认情况下它调用的是类中的**无参构造函数**，**如果没有无参构造函数则不能创建成功。**
 
 基本属性：
 
@@ -240,8 +246,8 @@ public void test1(){
 
 #### **Bean生命周期配置**
 
--  **init-method**：手动可指定类中的自己写的初始化方法名称，在对象创建后Spring会自动调用指定的方法，目的是完成一些必要的初始化工作
--  **destroy-method**：手动可指定类中自己销毁方法名称，在销毁对象前，Spring会自动调用指定的方法，目的是完成一些销毁前的工作
+-  **init-method**：手动可指定类中的自己写的**初始化方法名称**，在对象创建后Spring会自动调用指定的方法，目的是完成一些必要的初始化工作
+-  **destroy-method**：手动可指定类中自己**销毁方法名称**，在销毁对象前，Spring会自动调用指定的方法，目的是完成一些销毁前的工作
 
 Example：
 
@@ -290,7 +296,7 @@ Test
 
 #### **Bean实例化三种方式**
 
-- 无参**构造**方法实例化（默认）
+- 无参**构造**方法实例化**（默认）**
 - 工厂**静态**方法实例化
 - 工厂**实例**方法实例化
 
@@ -326,9 +332,9 @@ Test
 
 #### **Bean的依赖注入入门**
 
-前面我们写了DAO层的东西，并且在Spring里面配置了。然后下一步就是写Service层的内容，需要调用DAO层的方法；实现完业务层后，就是Cotroller层，调用Service内方法，在这里我们也是需要new Service对象的，好接下来：
+前面我们写了DAO层的东西，并且在Spring里面配置了。然后下一步就是**写Service层的内容，需要调用DAO层的方法**；实现完业务层后，就是Cotroller层，调用Service内方法，在这里我们也是需要new Service对象的，好接下来：
 
-下面我们先按照无注入的情况下，和前面写Dao对象的方式一样！！！
+**下面我们先按照无注入的情况下，和前面写Dao对象的方式一样！！！**
 
 ① 创建 UserService，UserService内部也写一个save方法，里面调用 UserDao的save() 方法
 
@@ -354,6 +360,7 @@ public class UserServiceImpl implements UserService {
 ```java
 public class UserController {
     public static void main(String[] args) {
+      
         ApplicationContext app = new ClassPathXmlApplicationContext("applicationContext.xml");
         UserService userService = (UserService) app.getBean("userService");
         userService.save();
@@ -365,13 +372,13 @@ public class UserController {
 
 <img src="images/image-20220226162106738.png" alt="image-20220226162106738" style="zoom:80%;" />
 
-我们分析一下整个实现流程：目前UserService实例和UserDao实例都存在与Spring容器中，当前的做法是在容器外部获得UserService实例和UserDao实例，然后在程序中进行结合。
+我们分析一下整个实现流程：目前**UserService实例**和**UserDao实例**都存在与Spring容器中，当前的做法是**在容器外部获得**UserService实例和UserDao实例，然后在程序中进行结合。
 
 <img src="images/image-20220226162203805.png" alt="image-20220226162203805" style="zoom:80%;" />
 
 这种方式是不是显得有笨笨的呢！！！因为里面有重复代码，我们new了两个app出来，而且最终程序直接使用的只有UserService啊，所以说：我们应该在Spring容器里面，将将UserDao设置到UserService内部！！！
 
-因为UserService和UserDao都在Spring容器中，而最终程序直接使用的是UserService，所以可以在Spring容器中，将UserDao设置到UserService内部。
+因为UserService和UserDao都在Spring容器中，而最终程序直接使用的是UserService，所以可以**在Spring容器中，将UserDao设置到UserService内部。**
 
 <img src="images/image-20220226162818339.png" alt="image-20220226162818339" style="zoom:80%;" />
 
@@ -379,9 +386,9 @@ public class UserController {
 
 **依赖注入（Dependency Injection）：它是 Spring 框架核心 IOC 的具体实现。**
 
-在编写程序时，通过控制反转，把对象的创建交给了 Spring，但是代码中不可能出现没有依赖的情况。IOC 解耦只是降低他们的依赖关系，但不会消除。例如：业务层仍会调用持久层的方法。
+==在编写程序时，通过控制反转，把对象的创建交给了 Spring，但是代码中不可能出现没有依赖的情况。IOC 解耦只是降低他们的依赖关系，但不会消除。例如：业务层仍会调用持久层的方法。==
 
-那这种业务层和持久层的依赖关系，在使用 Spring 之后，就让 Spring 来维护了。简单的说，就是坐等框架把持久层对象传入业务层，而不用我们自己去获取。
+==那这种业务层和持久层的依赖关系，在使用 Spring 之后，就让 Spring 来维护了。简单的说，就是坐等框架把持久层对象传入业务层，而不用我们自己去获取。==
 
 ##### **依赖注入方式**
 
@@ -399,6 +406,7 @@ public class UserController {
 public class UserServiceImpl implements UserService {
   // 添加一个成员变量
     private UserDao userDao;
+  
     public void setUserDao(UserDao userDao) {
         this.userDao = userDao;
     }
@@ -503,7 +511,7 @@ public class UserServiceImpl implements UserService {
 
 其中引用数据类型，此处就不再赘述了，之前的操作都是对UserDao对象的引用进行注入的，下面将以set方法注入为例，演示普通数据类型和集合数据类型的注入。
 
-==**普通数据类型**==
+==**普通数据类型 **==**< property name="username" value="周权"></property>**
 
 ```java
 public class UserDaoImpl implements UserDao {
@@ -593,7 +601,7 @@ public class UserDaoImpl implements UserDao {
 
 **1）ClassPathXmlApplicationContext**
 
-​		它是从类的根路径下加载配置文件（放在resources下） 推荐使用这种
+​		它是==从类的根路径下加载配置文件（放在resources下）==推荐使用这种
 
 **2）FileSystemXmlApplicationContext**
 
@@ -618,9 +626,11 @@ public <T> T getBean(Class<T> requiredType) throws BeansException {
 }
 ```
 
-其中，当参数的数据类型是字符串时，表示根据Bean的id从容器中获得Bean实例，返回是Object，需要强转。
+- 其中，当**参数的数据类型是字符串**时，表示根据Bean的id从容器中获得Bean实例，返回是Object，需要强转。
 
-当参数的数据类型是Class类型时，表示根据类型从容器中匹配Bean实例，当容器中相同类型的Bean有多个时，则此方法会报错。
+- 当**参数的数据类型是Class类型**时，表示根据类型从容器中匹配Bean实例，当容器中相同类型的Bean有多个时，则此方法会报错。
+
+
 
 ## **5. Spring配置数据源**
 
@@ -775,11 +785,13 @@ http://www.springframework.org/schema/context/spring-context.xsd
 
 ## 6. Spring注解开发
 
-Spring是轻代码而重配置的框架，配置比较繁重，影响开发效率，所以注解开发是一种趋势，注解代替xml配置文件可以简化配置，提高开发效率。
+Spring是轻代码而重配置的框架，配置比较繁重，影响开发效率，所以注解开发是一种趋势，**注解代替xml配置文件可以简化配置，提高开发效率。**
+
+<img src="images/image-20230222095458458.png" alt="image-20230222095458458" style="zoom:80%;" />
 
 ### **Spring原始注解**
 
-Spring原始注解主要是替代<Bean>的配置
+Spring原始注解主要是替代< Bean>的配置
 
 | **注解**    | **说明**                                                     |
 | ----------- | ------------------------------------------------------------ |
@@ -787,10 +799,10 @@ Spring原始注解主要是替代<Bean>的配置
 | @Controller | 使用在web层类上用于实例化Bean(同Component，但具有语义的作用) |
 | @Service    | 使用在service层类上用于实例化Bean(同Component，但具有语义的作用) |
 | @Repository | 使用在dao层类上用于实例化Bean(同Component，但具有语义的作用) |
-| @Autowired  | 使用在字段上按照数据类型从Spring容器中进行依赖注入（等同于getBean里面字节码对象类型注入，可能有问题） |
-| @Qualifier  | 结合@Autowired一起使用，根据bean名称进行依赖注入             |
-| @Resource   | 相当于@Autowired+@Qualifier，按照bean名称进行注入            |
-| @Value      | 注入普通属性   <property value>标签                          |
+| @Autowired  | 使用在字段上按照**数据类型**从Spring容器中进行**依赖注入**（等同于getBean里面字节码对象类型注入，可能有问题） |
+| @Qualifier  | 结合@Autowired一起使用，根据**bean名称进行依赖注入**         |
+| @Resource   | 相当于@Autowired+@Qualifier，按照**bean名称进行注入**        |
+| @Value      | **注入普通属性   < property value>标签**,看上面的就知道了    |
 | @Scope      | 标注Bean的作用范围                                           |
 
 | **注解**       | **说明**                                                 |
@@ -921,7 +933,7 @@ public class UserServiceImpl implements UserService {
 
 **组件扫描**
 
-你自己配置好了，但是Spring不晓得的哇，你要去告诉Spring，我代码哪些部分已经配置了注解，需要在applicationContext.xml中配置组件扫描，配置一个包的范围，这样Spring就会自动去这个包以及子包下所有的注解。
+你自己配置好了，但是Spring不晓得的哇，你要去告诉Spring，我代码哪些部分已经配置了注解，需要在applicationContext.xml中配置组件扫描，配置一个包的范围，==这样Spring就会自动去这个包以及子包下所有的注解。==
 
 ```xml
 <!--注解的组件扫描--> 
@@ -942,9 +954,9 @@ public class UserController {
 }
 ```
 
-###  **Spring新注解**
+###  **Spring新注解-去掉xml配置文件**
 
-使用上面的注解还不能全部替代xml配置文件，例如我们上面案例中的数据源配置、组件扫描配置等，其他的需要使用注解替代的xml标签如下：
+使用上面的注解还不能**全部替代xml配置文件**，例如我们上面案例中的数据源配置、组件扫描配置等，其他的需要使用注解替代的xml标签如下：
 
 -  非自定义的Bean的配置：< bean>
 -  加载properties文件的配置：<context:property-placeholder >
@@ -953,13 +965,13 @@ public class UserController {
 
 | **注解**        | **说明**                                                     |
 | --------------- | ------------------------------------------------------------ |
-| @Configuration  | 标志该类是Spring的核心配置类！                               |
+| @Configuration  | 标志该类是Spring的**核心配置类！可以有多个**                 |
 | @ComponentScan  | 用于指定 Spring 在初始化容器时要扫描的包。作用和在 Spring 的 xml 配置文件中的<context:component-scan   base-package="com.CCooky"/>一样 |
-| @Bean           | 使用在方法上，标注将该方法的返回值存储到 Spring 容器中       |
+| @Bean           | 必须配套使用在方法上，标注将该方法的返回值存储到 Spring 容器中 |
 | @PropertySource | 用于加载.properties 文件中的配置                             |
 | @Import         | 用于导入其他配置类，导入的是数组哦                           |
 
-```xml
+```java
 @ComponentScan("com.CCooky")
 
 @Bean("dataSource")// Spring会将当前方法的返回值以指定名称bean-id存储到容器里面
@@ -1078,12 +1090,12 @@ public void testConfiguration(){
 
 <img src="images/image-20220227182349289.png" alt="image-20220227182349289" style="zoom:80%;" />
 
-这两行代码的作用是获取容器，如果不写的话，直接会提示空指针异常。所以又不能轻易删掉。
+==这两行代码的作用是获取容器，如果不写的话，直接会提示空指针异常。所以又不能轻易删掉。==
 
 **上述问题解决思路**
 
 - ==让SpringJunit负责创建Spring容器==，但是需要将配置文件的名称告诉它
-- 将需要进行测试Bean直接在测试类中进行注入
+- ==将需要进行测试Bean直接在测试类中进行注入==
 
 **Spring集成Junit步骤**
 
@@ -1114,7 +1126,7 @@ public void testConfiguration(){
 </dependency>
 ```
 
-二：使用@Runwith注解替换原来的运行期。使用Spring的内核去跑，内部会帮我们做很多事情
+**二：使用@Runwith注解替换原来的运行期。使用Spring的内核去跑，内部会帮我们做很多事情**
 
 ```java
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -1123,7 +1135,7 @@ public class SpringJunitTest {
 }
 ```
 
-三：使用@ContextConfiguration指定配置文件或配置类，数组方式
+三：使用**@ContextConfiguration**指定配置文件或配置类，**数组方式**
 
  ```java
  @RunWith(SpringJUnit4ClassRunner.class)
@@ -1239,6 +1251,8 @@ public class UserServlet extends HttpServlet {
 </listener>
 ```
 
+<img src="images/image-20230222095308875.png" alt="image-20230222095308875" style="zoom: 67%;" />
+
 **3. 通过工具获得应用上下文对象**
 
 ```java
@@ -1253,7 +1267,7 @@ Object obj = applicationContext.getBean("id");
 
 ## 简介
 
-**AOP** 为 **A**spect **O**riented **P**rogramming 的缩写，意思为**面向切面编程**，是通过预编译方式和==运行期== **动态代理** 实现程序功能的统一维护的一种技术。
+**AOP** 为 **A**spect **O**riented **P**rogramming 的缩写，意思为**面向切面编程**，是通过**预编译方式**和==运行期== **动态代理** 实现程序功能的统一维护的一种技术。
 
 回顾一下动态代理：javaSE里面。可以松耦合，减少重复代码，完成功能增强！！！
 
@@ -1261,7 +1275,7 @@ Object obj = applicationContext.getBean("id");
 
 ## **AOP 的作用及其优势**
 
--  作用：在程序运行期间，在不修改源码的情况下对方法进行功能增强
+-  **作用：在程序运行期间，在不修改源码的情况下对方法进行功能增强**
 -  优势：减少重复代码，提高开发效率，并且便于维护
 
 具体的理解：看HeiMa—SSM—AOP部分
@@ -1915,6 +1929,8 @@ public class MyAspect {
 
 
 
+
+
 ## 基于注解的 AOP 开发
 
 ### **快速入门**
@@ -1997,9 +2013,9 @@ public class AnnoTest {
 
 通知的配置语法：@通知注解(”切点表达式“)
 
-@Before("execution(* com.CCooky.anno.*.*(..))")
+**@Before("execution(* com.CCooky.anno.*.*(..))")**
 
-<img src="images/image-20220312191858334.png" alt="image-20220312191858334" style="zoom:80%;" />
+<img src="./images/image-20220312191858334.png" alt="image-20220312191858334" style="zoom:80%;" />
 
 ### **切点表达式的抽取**
 

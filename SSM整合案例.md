@@ -394,6 +394,7 @@ public class SqlSessionFactoryUtil {
     <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
         <property name="basePackage" value="com.CCooky.mapper"/>
     </bean>
+  
 </beans>
 ```
 
